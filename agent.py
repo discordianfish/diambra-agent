@@ -2,6 +2,7 @@
 import logging
 import argparse
 import diambra.arena
+import time
 
 from diambra.arena.stable_baselines3.make_sb3_env import make_sb3_env
 from stable_baselines3 import PPO
@@ -26,6 +27,7 @@ def main():
 
     parser_play = subparsers.add_parser('play', help='Play a model to play Diambra Arena.')
     parser_play.add_argument('--agent-path', type=str, required=True)
+    parser_play.add_argument('--sleep', type=int, required=False)
     parser_play.set_defaults(func=play)
 
 
@@ -66,6 +68,8 @@ def play(args):
             "frame_stack": 5,
         },
     )
+    if args.sleep:
+        time.sleep(args.sleep)
 
     obs = env.reset()
     cumulative_reward = 0.0
