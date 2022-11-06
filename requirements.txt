@@ -1,0 +1,2 @@
+diambra-arena==2.0.0rc8
+stable-baselines3==1.6.1
