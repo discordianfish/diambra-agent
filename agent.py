@@ -10,7 +10,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
 
 STEPS = 100_000_000
-N_PER_STATUS = 1_000
+N_PER_STATUS = 100
 N_PER_CHECKPOINT = 10_000
 
 logger = logging.getLogger(__name__)
@@ -70,6 +70,7 @@ def play(args):
             "reward_normalization": True,
             "frame_stack": 5,
         },
+        no_vec=True,
     )
     if args.sleep:
         time.sleep(args.sleep)
@@ -88,12 +89,9 @@ def play(args):
         cumulative_reward += reward
 
         if i % N_PER_STATUS == 0:
-            reward_str = ""
-            if any(x != 0 for x in cumulative_reward):
-                reward_str = cumulative_reward
-            logger.info("%d. rewards: %s, info %s", i, reward_str, info)
+            logger.info("%d. rewards: %s, info %s", i, cumulative_reward, info)
 
-        if done.any():
+        if done:
             obs = env.reset()
             break
 
