@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import logging
 import argparse
-import diambra.arena
 import time
+
+import diambra.arena
 
 from diambra.arena.stable_baselines3.make_sb3_env import make_sb3_env
 from stable_baselines3 import PPO
@@ -13,6 +14,8 @@ N_PER_STATUS = 1_000
 N_PER_CHECKPOINT = 10_000
 
 logger = logging.getLogger(__name__)
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -71,7 +74,9 @@ def play(args):
     if args.sleep:
         time.sleep(args.sleep)
 
+    logger.info("resetting env")
     obs = env.reset()
+    logger.info("env resetted")
     cumulative_reward = 0.0
     i = 0
     while True:
