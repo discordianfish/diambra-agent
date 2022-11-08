@@ -18,6 +18,7 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 
 def main():
+    """main entry point"""
     parser = argparse.ArgumentParser(
         prog='my agent',
         description='My agent competing in Diambra Arena.'
@@ -29,8 +30,7 @@ def main():
     parser_train.set_defaults(func=train)
 
     parser_play = subparsers.add_parser('play', help='Play a model to play Diambra Arena.')
-    parser_play.add_argument('--agent-path', type=str, required=True)
-    parser_play.add_argument('--sleep', type=int, required=False)
+    parser_play.add_argument('agent_path', nargs=1, type=str)
     parser_play.set_defaults(func=play)
 
 
@@ -38,6 +38,7 @@ def main():
     args.func(args)
 
 def train(args):
+    """train subcommand"""
     env, num_envs = make_sb3_env(
         "doapp",
         {
@@ -59,7 +60,8 @@ def train(args):
     env.close()
 
 def play(args):
-    agent = PPO.load(args.agent_path)
+    """play subcommand"""
+    agent = PPO.load(args.agent_path[0])
     env, num_envs = make_sb3_env(
         "doapp",
         {
@@ -72,8 +74,6 @@ def play(args):
         },
         no_vec=True,
     )
-    if args.sleep:
-        time.sleep(args.sleep)
 
     logger.info("resetting env")
     obs = env.reset()
