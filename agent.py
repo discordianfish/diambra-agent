@@ -3,8 +3,6 @@ import logging
 import argparse
 import time
 
-import diambra.arena
-
 from diambra.arena.stable_baselines3.make_sb3_env import make_sb3_env
 from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import CheckpointCallback
@@ -27,6 +25,8 @@ def main():
 
     parser_train = subparsers.add_parser('train', help='Train a model to play Diambra Arena.')
     parser_train.add_argument('--log-dir', type=str, default='logs')
+    parser_train.add_argument('--name-prefix', type=str, default=time.strftime("%Y%m%d-%H%M%S"))
+    parser_train.add_argument('--load-agent-path', type=str)
     parser_train.set_defaults(func=train)
 
     parser_play = subparsers.add_parser('play', help='Play a model to play Diambra Arena.')
@@ -52,17 +52,22 @@ def train(args):
     )
     logger.info("Running %d environments", num_envs)
 
-    agent = PPO('CnnPolicy', env, verbose=1)
+    if args.load_agent_path:
+        logger.info("Loading agent from %s", args.load_agent_path)
+        agent = PPO.load(args.load_agent_path, env=env)
+    else:
+        agent = PPO('CnnPolicy', env, verbose=1)
+
     logger.info("Agent policy: %s", agent.policy)
 
-    agent.learn(total_timesteps=STEPS, callback=CheckpointCallback(N_PER_CHECKPOINT, args.log_dir))
+    agent.learn(total_timesteps=STEPS, callback=CheckpointCallback(N_PER_CHECKPOINT, args.log_dir, name_prefix=args.name_prefix))
 
     env.close()
 
 def play(args):
     """play subcommand"""
     agent = PPO.load(args.agent_path[0])
-    env, num_envs = make_sb3_env(
+    env, _ = make_sb3_env(
         "doapp",
         {
             "hardcore": True,
