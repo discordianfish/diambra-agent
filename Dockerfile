@@ -10,4 +10,4 @@ RUN pip install -r requirements.txt
 
 COPY agent.py ./
 COPY model.zip ./
-ENTRYPOINT [ "./agent.py", "play", "--agent-path", "model.zip", "--sleep", "30" ]
+ENTRYPOINT [ "./agent.py", "play", "model.zip" ]
