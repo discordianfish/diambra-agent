@@ -3,6 +3,7 @@
 import logging
 import argparse
 import time
+import os
 
 from diambra.arena.stable_baselines3.make_sb3_env import make_sb3_env
 from stable_baselines3 import PPO
@@ -24,7 +25,10 @@ def main():
         description='My agent competing in Diambra Arena.'
     )
     parser.add_argument('--difficulty', type=int, help='difficulty level')
-    parser.add_argument('--characters', type=str, help='character name')
+    parser.add_argument('--characters_p1', type=str, help='character(s) for player 1')
+    parser.add_argument('--characters_p2', type=str, help='character(s) for player 2')
+    parser.add_argument('--player', type=str,
+                        help='player side (P1, P2, Random)')
 
     subparsers = parser.add_subparsers(help='operations')
 
@@ -44,6 +48,14 @@ def main():
     args = parser.parse_args()
     args.func(args)
 
+def arg_or_env(args, name):
+    """get argument or environment variable"""
+    if getattr(args, name):
+        return getattr(args, name)
+    elif name.upper() in os.environ:
+        return os.environ[name.upper()]
+    else:
+        return None
 
 def settings_from_args(args):
     """create settings from argpase args"""
@@ -51,18 +63,28 @@ def settings_from_args(args):
         "hardcore": True,
         "frame_shape": [128, 128, 1],
     }
-    if args.difficulty:
-        settings["difficulty"] = args.difficulty
-    if args.characters:
-        settings["characters"] = args.characters
-    return settings
+    difficulty = arg_or_env(args, "difficulty")
+    if difficulty:
+        settings["difficulty"] = int(difficulty)
 
+    characters_p1 = arg_or_env(args, "characters_p1") or "Random"
+    characters_p2 = arg_or_env(args, "characters_p2") or "Random"
+    if characters_p1 or characters_p2:
+        settings["characters"] = [characters_p1.split(","),characters_p2.split(",")]
+
+    player = arg_or_env(args, "player")
+    if player:
+        settings["player"] = player
+
+    return settings
 
 def train(args):
     """train subcommand"""
+    settings = settings_from_args(args)
+    logger.info("Settings: %s", settings)
     env, num_envs = make_sb3_env(
         "doapp",
-        settings_from_args(args),
+        settings,
         {
             "reward_normalization": True,
             "frame_stack": 5,
@@ -89,10 +111,12 @@ def train(args):
 
 def play(args):
     """play subcommand"""
+    settings = settings_from_args(args)
+    logger.info("Settings: %s", settings)
     agent = PPO.load(args.agent_path[0])
     env, _ = make_sb3_env(
         "doapp",
-        settings_from_args(args),
+        settings,
         {
             "reward_normalization": True,
             "frame_stack": 5,
