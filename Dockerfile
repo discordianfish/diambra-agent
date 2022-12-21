@@ -7,7 +7,3 @@ RUN apt-get -qy update && \
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-
-COPY agent.py ./
-COPY model.zip ./
-ENTRYPOINT [ "./agent.py", "play", "model.zip" ]

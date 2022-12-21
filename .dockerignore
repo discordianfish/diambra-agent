@@ -1,2 +1,5 @@
 logs
 .venv
+models/
+scratch/
+.git

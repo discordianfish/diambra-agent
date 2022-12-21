@@ -5,9 +5,7 @@ import argparse
 import time
 import os
 
-from diambra.arena.stable_baselines3.make_sb3_env import make_sb3_env
-from stable_baselines3 import PPO
-from stable_baselines3.common.callbacks import CheckpointCallback
+from agent import Agent
 
 STEPS = 100_000_000
 N_PER_STATUS = 100
@@ -17,6 +15,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 
+agent = None
 
 def main():
     """main entry point"""
@@ -29,8 +28,11 @@ def main():
     parser.add_argument('--characters_p2', type=str, help='character(s) for player 2')
     parser.add_argument('--player', type=str,
                         help='player side (P1, P2, Random)')
+    parser.add_argument('--n-per-status', type=int, default=N_PER_STATUS)
+    parser.add_argument('--n-per-checkpoint', type=int, default=N_PER_CHECKPOINT)
+    parser.add_argument('--steps', type=int, default=STEPS)
 
-    subparsers = parser.add_subparsers(help='operations')
+    subparsers = parser.add_subparsers(help='operations', required=True)
 
     parser_train = subparsers.add_parser(
         'train', help='Train a model to play Diambra Arena.')
@@ -46,6 +48,9 @@ def main():
     parser_play.set_defaults(func=play)
 
     args = parser.parse_args()
+
+    global agent
+    agent = Agent("doapp", settings_from_args(args))
     args.func(args)
 
 def arg_or_env(args, name):
@@ -79,73 +84,10 @@ def settings_from_args(args):
     return settings
 
 def train(args):
-    """train subcommand"""
-    settings = settings_from_args(args)
-    logger.info("Settings: %s", settings)
-    env, num_envs = make_sb3_env(
-        "doapp",
-        settings,
-        {
-            "reward_normalization": True,
-            "frame_stack": 5,
-        },
-    )
-    logger.info("Running %d environments", num_envs)
-
-    if args.load_agent_path:
-        logger.info("Loading agent from %s", args.load_agent_path)
-        agent = PPO.load(args.load_agent_path, env=env)
-    else:
-        agent = PPO('CnnPolicy', env, verbose=1)
-
-    logger.info("Agent policy: %s", agent.policy)
-
-    agent.learn(
-        total_timesteps=STEPS,
-        callback=CheckpointCallback(
-            N_PER_CHECKPOINT, args.log_dir, name_prefix=args.name_prefix)
-    )
-
-    env.close()
-
+    agent.train(args)
 
 def play(args):
-    """play subcommand"""
-    settings = settings_from_args(args)
-    logger.info("Settings: %s", settings)
-    agent = PPO.load(args.agent_path[0])
-    env, _ = make_sb3_env(
-        "doapp",
-        settings,
-        {
-            "reward_normalization": True,
-            "frame_stack": 5,
-        },
-        no_vec=True,
-    )
-
-    logger.info("resetting env")
-    obs = env.reset()
-    logger.info("env resetted")
-    cumulative_reward = 0.0
-    i = 0
-    while True:
-        i = i + 1
-        env.render()
-
-        action, _state = agent.predict(obs, deterministic=True)
-        obs, reward, done, info = env.step(action)
-        cumulative_reward += reward
-
-        if i % N_PER_STATUS == 0:
-            logger.info("%d. rewards: %s, info %s", i, cumulative_reward, info)
-
-        if done:
-            obs = env.reset()
-            break
-
-    env.close()
-
+    agent.play(args)
 
 if __name__ == "__main__":
     main()

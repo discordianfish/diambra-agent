@@ -1,0 +1,19 @@
+{
+  "mode": "AIvsCOM",
+  "command": [
+    "python",
+    "agent.py",
+    "play",
+    "model.zip"
+  ],
+  "sources": [
+    {
+      "http": {
+        "files": {
+          "agent.zip": "https://huggingface.co/ziemke/diambra-agent/raw/main/agent.py",
+          "model.zip": "https://huggingface.co/ziemke/diambra-agent/resolve/main/models/20221108-214028_8100000_steps.zip"
+        }
+      }
+    }
+  ]
+}
